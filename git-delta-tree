@@ -30,8 +30,24 @@ def scan(range):
 
     return root
 
+
+def create_tree(root):
+    data = []
+    for k,v in root.items():
+        if isinstance(v, tuple):
+            data.append((v[0], 'blob', v[1], k))
+        else:
+            child_tree = create_tree(v)
+            data.append(('040000', 'tree', child_tree, k))
+
+    treetext = '\n'.join(['%s %s %s\t%s' % d for d in data])
+    p = subprocess.Popen(['git', 'mktree'], stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE)
+    out, err = p.communicate(input=treetext.encode('utf-8'))
+    return out.decode('utf-8').strip('\n')
+
+
 if __name__ == '__main__':
-    import pprint
     import sys
 
-    pprint.pprint(scan(sys.argv[1]))
+    print(create_tree(scan(sys.argv[1])))
